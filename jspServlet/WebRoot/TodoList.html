@@ -1,0 +1,119 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>myTodoList</title>
+<script>
+	$(function() {
+	    showTodoList(2); 
+	    
+	  	//同步数据库
+	    function DBSync(operation,todoNo,todoInfo,isFinished)
+		{
+		  var xmlhttp;    
+		  
+		  if (window.XMLHttpRequest)
+		  {
+		    // IE7+, Firefox, Chrome, Opera, Safari 浏览器执行代码
+		    xmlhttp=new XMLHttpRequest();
+		  }
+		  else
+		  {
+		    // IE6, IE5 浏览器执行代码
+		    xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+		  }
+		  
+			xmlhttp.onreadystatechange=function()
+			{
+			  if (xmlhttp.readyState==4 && xmlhttp.status==200)
+			   {
+					;
+			   }
+			}
+			var urlString = "./TodoList?operation="+operation+"todoNo="+todoNo+"&todoInfo="+todoInfo+"&isFinished="+isFinished;
+			  
+			xmlhttp.open("GET",urlString,true);
+			xmlhttp.send();	
+		    
+		}	
+	    
+	    //获取数据
+	    function getTodoItem() {
+	        var todoItem = localStorage.getItem("todolist");
+	        if(todoItem !== null) {   
+	            return JSON.parse(todoItem);  
+	        } else {
+	            return []; 
+	        }
+	    }
+	    
+	    //存储数据
+	    function setTodoItem(todoItem) {
+	        localStorage.setItem("todolist", JSON.stringify(todoItem));
+	    }
+	    
+	    //输入并提交代办事件
+	    $("#title").on("keydown", function(event) {
+	        if(event.keyCode === 13) {
+	            if($(this).val().trim() !== "") { 
+	                var todoItem = getTodoItem(); 
+	                todoItem.push({title: $(this).val(), done: false});
+	                setTodoItem(todoItem);      
+	                showTodoList(0);             
+	                $(this).val("");
+	            }
+	        }
+	    })
+	    
+	    //将代办事件设置为已完成
+	    $("ol, ul").on("click", "input", function() {
+	        var todoItem = getTodoItem();
+	        var todoNo = $(this).siblings("a").attr("todoNo");
+	        todoItem[todoNo].done = $(this).prop("checked");
+	        setTodoItem(todoItem);
+	        showTodoList(1);
+	    })
+	    	
+	    // 展示所有待办事件列表
+	    function showTodoList(operation) {
+	        var todoItem = getTodoItem();   
+	
+	        $("ol, ul").empty();   
+	        var finishedNum = 0;  
+	        var todoNum = 0; 
+	        $.each(todoItem, function(todoNo, todoInfo) {    
+	            if(todoInfo.done) {
+	                $("ul").prepend("<li><input type='checkbox' checked='checked' > <p>" + todoInfo.title + "</p> <a href='javascript:;' todoNo=" + todoNo + "></a></li>");
+	                finishedNum++; 
+	                DBSync(operation,todoNo,todoInfo.title,1);
+	            } else {
+	                $("ol").prepend("<li><input type='checkbox'> <p>" + todoInfo.title + "</p> <a href='javascript:;' todoNo=" + todoNo + "></a></li>");
+	                todoNum++;
+	                DBSync(operation,todoNo,todoInfo.title,0);
+	            }
+	        })
+	        
+	        $("#finishedItemNum").text(finishedNum);
+	        $("#todoItemNum").text(todoNum);
+	    }
+	}) 
+	</script>
+</head>
+<body>
+      <header>
+          <section>
+              <label for="title">TodoList</label>
+              <input type="text" id="title" name="title" required="required" autocomplete="off" />
+          </section>
+      </header>
+      <section>
+         <h2>TODO <span id="todocount"></span></h2>
+         <ol id="todolist" class="demo-box">
+ 
+         </ol>
+         <h2>已完成 <span id="donecount"></span></h2>
+         <ul id="donelist">
+ 
+         </ul>
+     </section>
+</body>
+</html>
